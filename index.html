@@ -2,273 +2,323 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ÀºÇòÕ½Êõ°å</title>
+<!-- ç¦æ­¢æ‰‹æœºåŒå‡»ç¼©æ”¾ï¼Œå¼€å¯çœŸæ­£è‡ªé€‚åº” -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>ç¯®çƒæˆ˜æœ¯æ¿</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:#113311;display:flex;flex-direction:column;align-items:center;padding:8px;}
-#court{background:#387838;border:3px solid #fff;}
-.controls{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+    background:#202020;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+#court{
+    background:#398039;
+    border:3px solid #fff;
+    /*ç”»å¸ƒæœ€å¤§å®½åº¦å æ»¡å¯ç”¨ç©ºé—´ï¼Œä¸ä¼šè¶…å‡ºæ‰‹æœºå±å¹• */
+    max-width:100%;
+}
+.controls{
+    margin-top:12px;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:center;
+}
 button{
-    padding:8px 14px;
+    padding:7px 14px;
     font-size:15px;
-    border:none;
+    border:0;
     border-radius:4px;
     background:#eee;
     cursor:pointer;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
-button:active{background:#ccc;}
+button:active{background:#bbbbbb}
 </style>
 </head>
 <body>
-<canvas id="court" width="1000" height="600"></canvas>
+<canvas id="court"></canvas>
 <div class="controls">
-    <button id="resetAll">ÖØÖÃÈ«Ô±Õ¾Î»</button>
-    <button id="clearLines">Çå¿Õ¼ıÍ·</button>
-    <button id="tact1">ÓÒ²àµ²²ğ</button>
-    <button id="tact2">µ×ÏßÑÚ»¤</button>
-    <button id="tact3">»¡¶¥Èı·ÖÕóĞÍ</button>
+    <button id="btnReset">é‡ç½®å…¨å‘˜ç«™ä½</button>
+    <button id="btnClearArrow">æ¸…ç©ºç®­å¤´</button>
+    <button id="btnT1">å³ä¾§æŒ¡æ‹†</button>
+    <button id="btnT2">åº•çº¿æ©æŠ¤</button>
+    <button id="btnT3">å¼§é¡¶ä¸‰åˆ†</button>
 </div>
 
 <script>
-const canvas = document.getElementById('court');
-const ctx = canvas.getContext('2d');
-const W = canvas.width;
-const H = canvas.height;
-const centerX = W / 2;
-const centerY = H / 2;
+const canvas = document.getElementById("court");
+const ctx = canvas.getContext("2d");
 
-// ÑÕÉ«
-const WHITE = "#fff";
-const RED = "#dc2222";
-const BLUE = "#2222dc";
-const ARROW_COLOR = "#20c020";
-const SELECT_COLOR = "#ffdd00";
+//åŸºå‡†è®¾è®¡å°ºå¯¸ï¼ˆåŸæ¥ç”µè„‘ç‰ˆå¤§å°ï¼Œæ‰€æœ‰åæ ‡ä»¥è¿™ä¸ªä¸ºæ ‡å‡†ï¼‰
+const BASE_W = 1000;
+const BASE_H = 560;
 
-// ÇòÔ±³õÊ¼»¯£º½ø¹¥ºì5ÈË£¬·ÀÊØÀ¶5ÈË
-let players = [
-    {x:150,y:180,color:RED,originX:150,originY:180,r:18},
-    {x:150,y:240,color:RED,originX:150,originY:240,r:18},
-    {x:150,y:300,color:RED,originX:150,originY:300,r:18},
-    {x:150,y:360,color:RED,originX:150,originY:360,r:18},
-    {x:150,y:420,color:RED,originX:150,originY:420,r:18},
+let scale = 1;  //æ•´ä½“ç¼©æ”¾ç³»æ•°
 
-    {x:750,y:180,color:BLUE,originX:750,originY:180,r:18},
-    {x:750,y:240,color:BLUE,originX:750,originY:240,r:18},
-    {x:750,y:300,color:BLUE,originX:750,originY:300,r:18},
-    {x:750,y:360,color:BLUE,originX:750,originY:360,r:18},
-    {x:750,y:420,color:BLUE,originX:750,originY:420,r:18},
+//çƒå‘˜åŸå§‹åŸºå‡†åæ ‡
+let playerBase = [
+    {x:760,y:280,color:"red",num:1},
+    {x:710,y:160,color:"red",num:2},
+    {x:710,y:400,color:"red",num:3},
+    {x:600,y:180,color:"red",num:4},
+    {x:600,y:380,color:"red",num:5},
+    {x:240,y:280,color:"blue",num:6},
+    {x:290,y:160,color:"blue",num:7},
+    {x:290,y:400,color:"blue",num:8},
+    {x:400,y:180,color:"blue",num:9},
+    {x:400,y:380,color:"blue",num:10},
 ];
-let selectedPlayer = null;
-let dragStart = null;
-let drawingLine = false;
-let lines = [];
-let currentLine = null;
+//å½“å‰å®é™…çƒå‘˜ä½ç½®
+let playerList=[];
+//å¤‡ä»½åŸºå‡†ç‚¹ä½ï¼ˆé‡ç½®ç”¨ï¼‰
+const originBase = JSON.parse(JSON.stringify(playerBase));
 
-// »æÖÆ±ê×¼°ë³¡Çò³¡
-function drawCourt(){
-    ctx.clearRect(0,0,W,H);
-    ctx.fillStyle="#387838";
-    ctx.fillRect(0,0,W,H);
+//ç®­å¤´
+let arrowStart = null;
+let tempArrowEnd = null;
+let savedArrows = [];
+let dragTarget = null;
 
-    // Íâ¿ò
-    ctx.strokeStyle=WHITE;
-    ctx.lineWidth=3;
-    ctx.strokeRect(40,40,W-80,H-80);
 
-    // ÖĞÏß
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.moveTo(centerX,40);
-    ctx.lineTo(centerX,H-40);
-    ctx.stroke();
+// é‡æ–°è®¡ç®—ç”»å¸ƒå¤§å°ã€ç¼©æ”¾æ¯”ä¾‹
+function resizeCanvas(){
+    //å¯ç”¨æœ€å¤§å®½åº¦
+    let maxW = document.body.clientWidth - 24;
+    //å®½é«˜æ¯”ä¾‹å›ºå®šä¸å˜
+    if(maxW>BASE_W) maxW=BASE_W;
+    scale = maxW / BASE_W;
 
-    // ÖĞÈ¦
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 80, 0, Math.PI*2);
-    ctx.stroke();
+    canvas.width  = BASE_W * scale;
+    canvas.height = BASE_H * scale;
+    //åŒæ­¥cssæ˜¾ç¤ºå°ºå¯¸
+    canvas.style.width = canvas.width +"px";
+    canvas.style.height = canvas.height +"px";
 
-    const hoopX = W - 40;
-    const hoopY = centerY;
-    const paintW = 160;
-    const paintH = 80;
-    // ÈıÃëÇø¾ØĞÎ
-    ctx.strokeRect(hoopX-paintW, hoopY-paintH/2, paintW, paintH);
-
-    // Èı·ÖÔ²»¡
-    const threeR = 230;
-    ctx.beginPath();
-    ctx.arc(hoopX, hoopY, threeR, -Math.PI*62/180, Math.PI*62/180);
-    ctx.stroke();
-
-    // Àº¿ğĞ¡Ô²
-    ctx.beginPath();
-    ctx.arc(hoopX, hoopY, 23, 0, Math.PI*2);
-    ctx.stroke();
-}
-
-// »æÖÆËùÓĞÇòÔ±
-function drawPlayers(){
-    players.forEach(p=>{
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fillStyle = p.color;
-        ctx.fill();
-        ctx.strokeStyle = WHITE;
-        ctx.lineWidth=2;
-        ctx.stroke();
-
-        // Ñ¡ÖĞ¸ßÁÁÍâÈ¦
-        if(selectedPlayer === p){
-            ctx.beginPath();
-            ctx.arc(p.x,p.y,p.r+4,0,Math.PI*2);
-            ctx.strokeStyle=SELECT_COLOR;
-            ctx.lineWidth=3;
-            ctx.stroke();
+    //æŠŠåŸºå‡†çƒå‘˜åæ ‡ Ã—ç¼©æ”¾ç³»æ•°ï¼Œè½¬ä¸ºå±å¹•å®é™…åæ ‡
+    playerList = playerBase.map(p=>{
+        return {
+            x:p.x*scale,
+            y:p.y*scale,
+            color:p.color,
+            num:p.num
         }
     })
+    redraw();
 }
 
-// »æÖÆÕ½Êõ¼ıÍ·Ïß¶Î
-function drawLines(){
-    ctx.strokeStyle=ARROW_COLOR;
-    ctx.lineWidth=3;
-    lines.forEach(seg=>{
-        drawArrow(seg.sx,seg.sy,seg.ex,seg.ey);
-    })
-    if(currentLine){
-        drawArrow(currentLine.sx,currentLine.sy,currentLine.ex,currentLine.ey);
-    }
-}
-// »­¼ıÍ·Ïß¶Î
-function drawArrow(x1,y1,x2,y2){
-    const headLen = 12;
-    const angle = Math.atan2(y2-y1, x2-x1);
+
+function drawCourt() {
+    const W = canvas.width;
+    const H = canvas.height;
+
+    ctx.fillStyle="#398039";
+    ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle="#ffffff";
+    ctx.lineWidth=2*scale;
+
+    const margin = 25*scale;
+    ctx.strokeRect(margin, margin, W - margin*2, H - margin*2);
+
     ctx.beginPath();
-    ctx.moveTo(x1,y1);
-    ctx.lineTo(x2,y2);
-    ctx.lineTo(
-        x2 - headLen*Math.cos(angle-Math.PI/6),
-        y2 - headLen*Math.sin(angle-Math.PI/6)
-    );
-    ctx.moveTo(x2,y2);
-    ctx.lineTo(
-        x2 - headLen*Math.cos(angle+Math.PI/6),
-        y2 - headLen*Math.sin(angle+Math.PI/6)
-    );
+    ctx.moveTo(W/2, margin);
+    ctx.lineTo(W/2, H - margin);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(W/2, H/2, 60*scale, 0, Math.PI*2);
+    ctx.stroke();
+
+    const hoopX = W - margin;
+    const hoopY = H / 2;
+
+    ctx.beginPath();
+    ctx.arc(hoopX, hoopY, 80*scale, 0, Math.PI*2);
+    ctx.stroke();
+
+    const threeR = 225*scale;
+    const angStart = - 67 * Math.PI / 180;
+    const angEnd   =  67 * Math.PI / 180;
+    ctx.beginPath();
+    ctx.arc(hoopX, hoopY, threeR, angStart, angEnd);
+    ctx.stroke();
+
+    let p1x = hoopX + threeR * Math.cos(angStart);
+    let p1y = hoopY + threeR * Math.sin(angStart);
+    let p2x = hoopX + threeR * Math.cos(angEnd);
+    let p2y = hoopY + threeR * Math.sin(angEnd);
+
+    ctx.beginPath();
+    ctx.moveTo(p1x,p1y);
+    ctx.lineTo(p1x, H - margin);
+    ctx.moveTo(p2x,p2y);
+    ctx.lineTo(p2x, margin);
+    ctx.stroke();
+
+    ctx.strokeRect(W - margin -160*scale, hoopY -80*scale, 160*scale, 160*scale);
+}
+
+function drawArrowLine(p1,p2){
+    ctx.beginPath();
+    ctx.moveTo(p1.x,p1.y);
+    ctx.lineTo(p2.x,p2.y);
+    ctx.stroke();
+    let ang = Math.atan2(p2.y-p1.y, p2.x-p1.x);
+    const arrowLen=13*scale;
+    ctx.beginPath();
+    ctx.moveTo(p2.x,p2.y);
+    ctx.lineTo(p2.x - arrowLen*Math.cos(ang-0.42), p2.y - arrowLen*Math.sin(ang-0.42));
+    ctx.moveTo(p2.x,p2.y);
+    ctx.lineTo(p2.x - arrowLen*Math.cos(ang+0.42), p2.y - arrowLen*Math.sin(ang+0.42));
     ctx.stroke();
 }
 
-// È«¾ÖË¢ĞÂ
-function render(){
+function redraw(){
     drawCourt();
-    drawLines();
-    drawPlayers();
-}
-
-// ÅĞ¶¨µãÊÇ·ñÃüÖĞÇòÔ±Ô²ĞÎ
-function getPlayerByPos(px,py){
-    for(let p of players){
-        let dx = px - p.x;
-        let dy = py - p.y;
-        if(dx*dx+dy*dy <= p.r*p.r) return p;
+    ctx.lineWidth=3*scale;
+    ctx.strokeStyle="#ffffff";
+    for(let arr of savedArrows){
+        drawArrowLine(arr.s,arr.e);
     }
-    return null;
+    if(arrowStart && tempArrowEnd){
+        ctx.strokeStyle="#ffdd33";
+        drawArrowLine(arrowStart,tempArrowEnd);
+    }
+    for(let pl of playerList){
+        ctx.beginPath();
+        const r=19*scale;
+        ctx.arc(pl.x,pl.y,r,0,Math.PI*2);
+        ctx.fillStyle = pl.color;
+        ctx.fill();
+        ctx.strokeStyle="#fff";
+        ctx.stroke();
+
+        ctx.fillStyle="#ffffff";
+        ctx.font = "bold "+(20*scale)+"px Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle="#000000";
+        ctx.lineWidth=2*scale;
+        ctx.strokeText(String(pl.num), pl.x, pl.y);
+        ctx.fillText(String(pl.num), pl.x, pl.y);
+    }
 }
 
-// Êó±ê/´¥Ãş°´ÏÂ
-function startAt(x,y){
-    dragStart = {x,y};
-    let p = getPlayerByPos(x,y);
-    if(p){
-        selectedPlayer = p;
-        drawingLine = false;
+//é¼ æ ‡ / è§¦å±åæ ‡è½¬æ¢
+function getPos(e){
+    const rect = canvas.getBoundingClientRect();
+    let clientX,clientY;
+    //åŒºåˆ†é¼ æ ‡ å’Œæ‰‹æœºè§¦æ‘¸
+    if(e.touches){
+        clientX=e.touches[0].clientX;
+        clientY=e.touches[0].clientY;
     }else{
-        selectedPlayer = null;
-        drawingLine = true;
-        currentLine = {sx:x, sy:y, ex:x, ey:y};
+        clientX=e.clientX;
+        clientY=e.clientY;
     }
-}
-// ÍÏ¶¯
-function moveAt(x,y){
-    if(selectedPlayer){
-        selectedPlayer.x = x;
-        selectedPlayer.y = y;
-    }else if(drawingLine && currentLine){
-        currentLine.ex = x;
-        currentLine.ey = y;
+    return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
     }
-}
-// ËÉ¿ª
-function endAt(){
-    if(drawingLine && currentLine){
-        lines.push(currentLine);
-        currentLine = null;
-    }
-    dragStart = null;
 }
 
-// Êó±êÊÂ¼ş
-canvas.addEventListener('mousedown',e=>{
-    const rect = canvas.getBoundingClientRect();
-    startAt(e.clientX-rect.left, e.clientY-rect.top);
-})
-canvas.addEventListener('mousemove',e=>{
-    const rect = canvas.getBoundingClientRect();
-    moveAt(e.clientX-rect.left, e.clientY-rect.top);
-})
-canvas.addEventListener('mouseup',endAt);
-canvas.addEventListener('mouseleave',endAt);
-
-// ´¥ÆÁÊÂ¼ş£¨ÊÖ»ú£©
-canvas.addEventListener('touchstart',e=>{
+//é¼ æ ‡æŒ‰ä¸‹ /æ‰‹æŒ‡è§¦æ‘¸
+function pointerDown(e){
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const t = e.touches[0];
-    startAt(t.clientX-rect.left, t.clientY-rect.top);
-})
-canvas.addEventListener('touchmove',e=>{
+    let pos = getPos(e);
+    const mx = pos.x;
+    const my = pos.y;
+    dragTarget=null;
+    const r=19*scale;
+    for(let p of playerList){
+        let dx = mx-p.x;
+        let dy = my-p.y;
+        if(dx*dx+dy*dy < r*r){
+            dragTarget=p;
+            return;
+        }
+    }
+    arrowStart = {x:mx,y:my};
+    tempArrowEnd = {x:mx,y:my};
+}
+
+//æ‹–åŠ¨
+function pointerMove(e){
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const t = e.touches[0];
-    moveAt(t.clientX-rect.left, t.clientY-rect.top);
-})
-canvas.addEventListener('touchend',e=>{e.preventDefault();endAt()});
-
-// °´Å¥¹¦ÄÜ
-document.getElementById('resetAll').onclick = ()=>{
-    players.forEach(p=>{
-        p.x = p.originX;
-        p.y = p.originY;
-    })
-    selectedPlayer = null;
-}
-document.getElementById('clearLines').onclick = ()=>{
-    lines = [];
-    currentLine = null;
+    let pos = getPos(e);
+    const mx = pos.x;
+    const my = pos.y;
+    if(dragTarget){
+        dragTarget.x=mx;
+        dragTarget.y=my;
+        redraw();
+        return;
+    }
+    if(arrowStart){
+        tempArrowEnd={x:mx,y:my};
+        redraw();
+    }
 }
 
-// ÈıÌ×Ô¤ÉèÕ½Êõ
-document.getElementById('tact1').onclick = ()=>{
-    players[0].x=680;players[0].y=280;
-    players[1].x=730;players[1].y=280;
-}
-document.getElementById('tact2').onclick = ()=>{
-    players[0].x=820;players[0].y=120;
-    players[1].x=820;players[1].y=480;
-}
-document.getElementById('tact3').onclick = ()=>{
-    players[0].x=620;players[0].y=300;
-    players[1].x=580;players[1].y=180;
-    players[2].x=580;players[2].y=420;
+//æ¾å¼€
+function pointerUp(e){
+    e.preventDefault();
+    if(dragTarget){
+        dragTarget=null;
+        return;
+    }
+    if(arrowStart && tempArrowEnd){
+        savedArrows.push({s:arrowStart,e:tempArrowEnd});
+    }
+    arrowStart=null;
+    tempArrowEnd=null;
+    redraw();
 }
 
-// Ñ­»·äÖÈ¾
-function loop(){
-    render();
-    requestAnimationFrame(loop);
-}
-loop();
+//ç”µè„‘é¼ æ ‡äº‹ä»¶
+canvas.addEventListener("mousedown",pointerDown);
+canvas.addEventListener("mousemove",pointerMove);
+canvas.addEventListener("mouseup",pointerUp);
+//æ‰‹æœºè§¦å±äº‹ä»¶
+canvas.addEventListener("touchstart",pointerDown);
+canvas.addEventListener("touchmove",pointerMove);
+canvas.addEventListener("touchend",pointerUp);
+
+
+//é‡ç½®æŒ‰é’®
+document.getElementById("btnReset").onclick = function(){
+    playerBase = JSON.parse(JSON.stringify(originBase));
+    resizeCanvas();
+};
+document.getElementById("btnClearArrow").onclick = function(){
+    savedArrows=[];
+    redraw();
+};
+document.getElementById("btnT1").onclick = function(){
+    //åŸºå‡†åæ ‡æ”¹åŠ¨
+    playerBase[0].x = 870;
+    playerBase[0].y = 280;
+    resizeCanvas();
+};
+document.getElementById("btnT2").onclick = function(){
+    playerBase[1].x=830;playerBase[1].y=70;
+    playerBase[2].x=830;playerBase[2].y=490;
+    resizeCanvas();
+};
+document.getElementById("btnT3").onclick = function(){
+    playerBase[3].x=530;playerBase[3].y=140;
+    playerBase[4].x=530;playerBase[4].y=420;
+    resizeCanvas();
+};
+
+//æµè§ˆå™¨çª—å£å¤§å°æ”¹å˜ï¼Œè‡ªåŠ¨é‡ç»˜
+window.addEventListener('resize',resizeCanvas);
+
+resizeCanvas();
 </script>
 </body>
 </html>
