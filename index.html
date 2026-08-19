@@ -2,9 +2,8 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<!-- 禁止手机双击缩放，开启真正自适应 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>篮球战术板</title>
+<title>篮球战术板‑竖屏版</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
@@ -13,13 +12,17 @@ body{
     display:flex;
     flex-direction:column;
     align-items:center;
+    justify-content:flex-start;
+    min-height:100vh;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 #court{
     background:#398039;
     border:3px solid #fff;
-    /*画布最大宽度占满可用空间，不会超出手机屏幕 */
-    max-width:100%;
+    width:100%;
+    max-width:760px;
+    height:auto;
+    aspect-ratio:560 / 1000;
 }
 .controls{
     margin-top:12px;
@@ -27,6 +30,7 @@ body{
     gap:8px;
     flex-wrap:wrap;
     justify-content:center;
+    max-width:760px;
 }
 button{
     padding:7px 14px;
@@ -38,6 +42,18 @@ button{
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 button:active{background:#bbbbbb}
+/*只在手机设备横屏的时候提示，电脑不受限制*/
+@media screen and (max-width:768px) and (orientation: landscape) {
+    body::before {
+        content: "请竖屏使用";
+        color:#fff;
+        font-size:18px;
+        margin-bottom:10px;
+    }
+    #court {
+        display:none;
+    }
+}
 </style>
 </head>
 <body>
@@ -54,52 +70,45 @@ button:active{background:#bbbbbb}
 const canvas = document.getElementById("court");
 const ctx = canvas.getContext("2d");
 
-//基准设计尺寸（原来电脑版大小，所有坐标以这个为标准）
-const BASE_W = 1000;
-const BASE_H = 560;
+//竖屏基准尺寸 宽560 高1000，篮筐在下方
+const BASE_W = 560;
+const BASE_H = 1000;
 
-let scale = 1;  //整体缩放系数
+let scale = 1;
 
-//球员原始基准坐标
+//球员基准坐标，竖屏布局
 let playerBase = [
-    {x:760,y:280,color:"red",num:1},
-    {x:710,y:160,color:"red",num:2},
-    {x:710,y:400,color:"red",num:3},
-    {x:600,y:180,color:"red",num:4},
-    {x:600,y:380,color:"red",num:5},
-    {x:240,y:280,color:"blue",num:6},
-    {x:290,y:160,color:"blue",num:7},
-    {x:290,y:400,color:"blue",num:8},
-    {x:400,y:180,color:"blue",num:9},
-    {x:400,y:380,color:"blue",num:10},
+    {x:280,y:900,color:"red",num:1},
+    {x:160,y:800,color:"red",num:2},
+    {x:400,y:800,color:"red",num:3},
+    {x:180,y:650,color:"red",num:4},
+    {x:380,y:650,color:"red",num:5},
+
+    {x:280,y:180,color:"blue",num:6},
+    {x:160,y:280,color:"blue",num:7},
+    {x:400,y:280,color:"blue",num:8},
+    {x:180,y:430,color:"blue",num:9},
+    {x:380,y:430,color:"blue",num:10},
 ];
-//当前实际球员位置
 let playerList=[];
-//备份基准点位（重置用）
 const originBase = JSON.parse(JSON.stringify(playerBase));
 
-//箭头
 let arrowStart = null;
 let tempArrowEnd = null;
 let savedArrows = [];
 let dragTarget = null;
 
 
-// 重新计算画布大小、缩放比例
 function resizeCanvas(){
-    //可用最大宽度
     let maxW = document.body.clientWidth - 24;
-    //宽高比例固定不变
-    if(maxW>BASE_W) maxW=BASE_W;
+    if(maxW>760) maxW=760;
     scale = maxW / BASE_W;
 
     canvas.width  = BASE_W * scale;
     canvas.height = BASE_H * scale;
-    //同步css显示尺寸
     canvas.style.width = canvas.width +"px";
     canvas.style.height = canvas.height +"px";
 
-    //把基准球员坐标 ×缩放系数，转为屏幕实际坐标
     playerList = playerBase.map(p=>{
         return {
             x:p.x*scale,
@@ -122,27 +131,32 @@ function drawCourt() {
     ctx.lineWidth=2*scale;
 
     const margin = 25*scale;
+    //外框
     ctx.strokeRect(margin, margin, W - margin*2, H - margin*2);
-
+    //水平中线
     ctx.beginPath();
-    ctx.moveTo(W/2, margin);
-    ctx.lineTo(W/2, H - margin);
+    ctx.moveTo(margin, H/2);
+    ctx.lineTo(W - margin, H/2);
     ctx.stroke();
-
+    //中圈
     ctx.beginPath();
     ctx.arc(W/2, H/2, 60*scale, 0, Math.PI*2);
     ctx.stroke();
 
-    const hoopX = W - margin;
-    const hoopY = H / 2;
+    //篮筐：底部居中
+    const hoopX = W / 2;
+    const hoopY = H - margin;
 
+    //罚球圈
     ctx.beginPath();
     ctx.arc(hoopX, hoopY, 80*scale, 0, Math.PI*2);
     ctx.stroke();
 
-    const threeR = 225*scale;
-    const angStart = - 67 * Math.PI / 180;
-    const angEnd   =  67 * Math.PI / 180;
+    //三分线，篮筐朝下，圆弧在上
+    const threeR = 225 * scale;
+    const angStart = (90 + 67) * Math.PI / 180;
+    const angEnd   = (90 - 67) * Math.PI / 180;
+
     ctx.beginPath();
     ctx.arc(hoopX, hoopY, threeR, angStart, angEnd);
     ctx.stroke();
@@ -152,14 +166,16 @@ function drawCourt() {
     let p2x = hoopX + threeR * Math.cos(angEnd);
     let p2y = hoopY + threeR * Math.sin(angEnd);
 
+    //三分两条水平边线
     ctx.beginPath();
-    ctx.moveTo(p1x,p1y);
-    ctx.lineTo(p1x, H - margin);
-    ctx.moveTo(p2x,p2y);
-    ctx.lineTo(p2x, margin);
+    ctx.moveTo(p1x, p1y);
+    ctx.lineTo(W - margin, p1y);
+    ctx.moveTo(p2x, p2y);
+    ctx.lineTo(margin, p2y);
     ctx.stroke();
 
-    ctx.strokeRect(W - margin -160*scale, hoopY -80*scale, 160*scale, 160*scale);
+    //油漆区矩形
+    ctx.strokeRect(hoopX - 80 * scale, H - margin - 160 * scale, 160 * scale, 160 * scale);
 }
 
 function drawArrowLine(p1,p2){
@@ -208,11 +224,10 @@ function redraw(){
     }
 }
 
-//鼠标 / 触屏坐标转换
+//坐标兼容鼠标、触屏
 function getPos(e){
     const rect = canvas.getBoundingClientRect();
     let clientX,clientY;
-    //区分鼠标 和手机触摸
     if(e.touches){
         clientX=e.touches[0].clientX;
         clientY=e.touches[0].clientY;
@@ -226,7 +241,6 @@ function getPos(e){
     }
 }
 
-//鼠标按下 /手指触摸
 function pointerDown(e){
     e.preventDefault();
     let pos = getPos(e);
@@ -246,7 +260,6 @@ function pointerDown(e){
     tempArrowEnd = {x:mx,y:my};
 }
 
-//拖动
 function pointerMove(e){
     e.preventDefault();
     let pos = getPos(e);
@@ -264,7 +277,6 @@ function pointerMove(e){
     }
 }
 
-//松开
 function pointerUp(e){
     e.preventDefault();
     if(dragTarget){
@@ -279,17 +291,16 @@ function pointerUp(e){
     redraw();
 }
 
-//电脑鼠标事件
+//绑定事件
 canvas.addEventListener("mousedown",pointerDown);
 canvas.addEventListener("mousemove",pointerMove);
 canvas.addEventListener("mouseup",pointerUp);
-//手机触屏事件
 canvas.addEventListener("touchstart",pointerDown);
 canvas.addEventListener("touchmove",pointerMove);
 canvas.addEventListener("touchend",pointerUp);
 
 
-//重置按钮
+//按钮
 document.getElementById("btnReset").onclick = function(){
     playerBase = JSON.parse(JSON.stringify(originBase));
     resizeCanvas();
@@ -299,23 +310,21 @@ document.getElementById("btnClearArrow").onclick = function(){
     redraw();
 };
 document.getElementById("btnT1").onclick = function(){
-    //基准坐标改动
-    playerBase[0].x = 870;
-    playerBase[0].y = 280;
+    playerBase[0].x = 280;
+    playerBase[0].y = 920;
     resizeCanvas();
 };
 document.getElementById("btnT2").onclick = function(){
-    playerBase[1].x=830;playerBase[1].y=70;
-    playerBase[2].x=830;playerBase[2].y=490;
+    playerBase[1].x = 140; playerBase[1].y = 840;
+    playerBase[2].x = 420; playerBase[2].y = 840;
     resizeCanvas();
 };
 document.getElementById("btnT3").onclick = function(){
-    playerBase[3].x=530;playerBase[3].y=140;
-    playerBase[4].x=530;playerBase[4].y=420;
+    playerBase[3].x = 160; playerBase[3].y = 600;
+    playerBase[4].x = 400; playerBase[4].y = 600;
     resizeCanvas();
 };
 
-//浏览器窗口大小改变，自动重绘
 window.addEventListener('resize',resizeCanvas);
 
 resizeCanvas();
